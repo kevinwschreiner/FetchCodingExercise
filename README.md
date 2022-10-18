@@ -6,13 +6,13 @@
 2. Subtract points
 3. List current balances of all payers
 
-## Getting the Thing Running
+## Getting the Web Service Running
 
 ### Things you'll need:
 
 - Download & install [Visual Studio Code](https://code.visualstudio.com/).
 - Download & install [NodeJS](https://nodejs.org/en/). I'm running version 16.18.0.
-- Have installed some application for the sending of HTTP requests. I used [Postman](https://www.postman.com/downloads/) for this.
+- Have installed some application for the sending of HTTP requests. (I used [Postman](https://www.postman.com/downloads/) for this.)
 
 ### Steps:
 
@@ -20,7 +20,7 @@
 2. Open a new terminal window in VS Code. (Terminal > New Terminal)
 3. To install the program's dependencies, type `npm install` in the terminal window.
 4. To begin the service, type `npm run start:dev` in the terminal window.
-5. You should see `listening to port 3000` in the terminal shortly, meaning it's ready for requests on that port!
+5. You should see `listening to port 3000` in the terminal shortly, meaning it's ready for requests on that port.
 6. To end the service, Ctrl-C with the terminal focused will bring up the prompt to terminate.
 
 ## Add Transaction
@@ -43,7 +43,7 @@ POST `http://localhost:3000/spend_points/{ "points": 25 }`
 
 ### Sample Return:
 
-`[{"payer":"Mario","points":-10},{"payer":"LUIGI","points":-15}]`
+`[{"payer":"MARIO","points":-10},{"payer":"LUIGI","points":-15}]`
 
 ## Return Balances
 
@@ -55,4 +55,4 @@ GET `http://localhost:3000/balances`
 
 ### Sample Return:
 
-`[{"payer":"Mario","points":0},{"payer":"LUIGI","points":20}]`
+`[{"payer":"MARIO","points":0},{"payer":"LUIGI","points":20}]`

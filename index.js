@@ -15,33 +15,33 @@ class receipt {
 class receiptList {
   constructor() {
     this.head = null;
-    this.pointsHead = null; //first node in the list with non-zero points
+    this.pointsHead = null; //first node in the list with non-zero points remaining
   }
-  //method to insert a new transactions in the list
+
+  //method to insert a new transaction into the list
   sortedInsert(newItem) {
-    let current;
+    let current = this.head;
     // Special case for empty list or new receipt being oldest
     if (this.head == null || newItem.date <= this.head.date) {
       newItem.next = this.head;
       this.head = newItem;
     } else {
       // Locate the node before point of insertion
-      current = this.head;
-
       while (current.next && newItem.date > current.next.date)
         current = current.next;
 
-      // Either reached end of list or found sweetspot.  Insert Time
+      // Either reached end of list or found sweetspot.  time to insert
       newItem.next = current.next;
       current.next = newItem;
     }
-    // after inserting, reset the pointsHead
+    // After insertion, find new pointsHead
     current = this.head;
     while (current.next && current.points == 0) {
       current = current.next;
     }
     this.pointsHead = current;
   }
+
   //method to return total points in receiptList
   pointsBalance() {
     let count = 0;
@@ -52,25 +52,27 @@ class receiptList {
     }
     return count;
   }
+
   //method to return array of unique payers & point totals
   tallyPointsPerPayer() {
     let resultPayers = new Array();
     let resultPoints = new Array();
     let index = 0;
     let node = this.head;
+    //iterate through the list
     while (node) {
-      //if payer isn't present in array, add payer name & points to their arrays
+      //if payer isn't present in resultPayers, add payer & points to their respective arrays
       if (resultPayers.indexOf(node.payer) == -1) {
         resultPayers[index] = node.payer;
         resultPoints[index++] = node.points;
       }
-      //if it is present, add its points to the array
+      //if it is present, add its points to resultPoints at the relevant index
       else {
         resultPoints[resultPayers.indexOf(node.payer)] += node.points;
       }
       node = node.next;
     }
-    //pack the 2 arrays an array of objects
+    //pack the 2 arrays into an array of objects for JSONification
     let cleanupCrew = new Array();
     for (let i = 0; i < resultPayers.length; i++) {
       cleanupCrew[i] = {
@@ -80,9 +82,11 @@ class receiptList {
     }
     return cleanupCrew;
   }
+
   //method to spend points from the oldest transaction + return the change in points
   spendOldest(debit) {
     let pointsChange = 0;
+    //if the current transaction can't handle the cost, set its points to zero & reduce debit accordingly (or grow, if this transaction had negative points)
     if (this.pointsHead.points <= debit) {
       pointsChange = this.pointsHead.points * -1;
       this.pointsHead.points = 0;
@@ -91,12 +95,14 @@ class receiptList {
         this.pointsHead = this.pointsHead.next;
       }
     } else {
+      //if the current transaction can handle the cost, reduce it by debit
       pointsChange = debit * -1;
       this.pointsHead.points -= debit;
     }
     return pointsChange;
   }
-  //method to handle spending of points. returns array of unique payers & point totals
+
+  //method to handle spending of points. returns array of unique involved payers & point changes
   spendPoints(pointsToSpend) {
     let resultPayers = new Array();
     let resultPoints = new Array();
@@ -104,20 +110,19 @@ class receiptList {
     while (pointsToSpend > 0) {
       let currentPayer = this.pointsHead.payer;
       let pointsSpent = 0;
-      //if payer isn't present in array, add object containing payer name & points for this transact
+      //if payer isn't present in resultPayers, add payer & points to their respective arrays
       if (resultPayers.indexOf(currentPayer) == -1) {
         resultPayers[index] = currentPayer;
         pointsSpent = this.spendOldest(pointsToSpend);
         resultPoints[index++] = pointsSpent;
       }
-      //if it is present, add its points to previous total
+      //if it is present, add its points to resultPoints at the relevant index
       else {
         pointsSpent = this.spendOldest(pointsToSpend);
         resultPoints[resultPayers.indexOf(currentPayer)] += pointsSpent;
       }
       pointsToSpend += pointsSpent;
     }
-
     //pack the 2 arrays into an array of objects for JSONification
     let cleanupCrew = new Array();
     for (let i = 0; i < resultPayers.length; i++) {
@@ -130,6 +135,7 @@ class receiptList {
   }
 }
 
+//finally make the darn thing
 let bigBoyList = new receiptList();
 
 // when a new receipt item is posted, grab its data & insert it into the list
@@ -140,13 +146,9 @@ app.post("/add_item/:receivedItem", (req, res) => {
   res.send("Transaction Added");
 });
 
-// when a new spend is posted
+// when a new spend is posted, check it against the balance, and deduct it if enough
 app.post("/spend_points/:value", (req, res) => {
-  try {
-    let pointsToSpend = parseInt(JSON.parse(req.params.value).points);
-  } catch {
-    ("Input is not an integer");
-  }
+  let pointsToSpend = parseInt(JSON.parse(req.params.value).points);
   if (pointsToSpend > bigBoyList.pointsBalance()) {
     res.send("Insufficient Points");
   } else {
@@ -154,11 +156,12 @@ app.post("/spend_points/:value", (req, res) => {
   }
 });
 
-//call for a list of payers & their current balances
+// call for a list of payers & their current balances
 app.get("/balances", function routeHandler(req, res) {
   res.send(JSON.stringify(bigBoyList.tallyPointsPerPayer()));
 });
 
+// 👂
 app.listen(port, () => {
   console.log("listening to port", port);
 });
